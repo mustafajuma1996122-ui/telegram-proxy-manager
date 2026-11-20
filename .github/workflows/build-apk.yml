@@ -31,6 +31,7 @@ jobs:
           mkdir -p buildsrc
           unzip -q Telegram_Proxy_Manager_Android_V2_APK_Build.zip -d buildsrc
           cd buildsrc/Telegram_Proxy_Manager_Android_V2
+          echo "android.accept_sdk_license = True" >> buildozer.spec
           buildozer -v android debug
 
       - name: Upload APK
