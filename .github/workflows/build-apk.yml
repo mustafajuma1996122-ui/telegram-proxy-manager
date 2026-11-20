@@ -4,39 +4,59 @@ name: Build Telegram Proxy APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
+      # تحميل ملفات المستودع
       - name: Checkout
         uses: actions/checkout@v4
 
+      # إعداد Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      # تثبيت متطلبات البناء
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip build-essential libffi-dev libssl-dev
+          sudo apt-get install -y \
+            git zip unzip \
+            build-essential \
+            libffi-dev libssl-dev \
+            python3-pip
+
           python3 -m pip install --upgrade pip
           python3 -m pip install buildozer cython==0.29.36
 
-      - name: Build APK
+      # استخراج ملفات المشروع
+      - name: Extract Android project
         run: |
           mkdir -p buildsrc
           unzip -q Telegram_Proxy_Manager_Android_V2_APK_Build.zip -d buildsrc
-          cd buildsrc/Telegram_Proxy_Manager_Android_V2
-          echo "android.accept_sdk_license = True" >> buildozer.spec
-          buildozer -v android debug
 
+      # بناء تطبيق Android وقبول التراخيص تلقائياً
+      - name: Build APK
+        run: |
+          cd buildsrc/Telegram_Proxy_Manager_Android_V2
+
+          export JAVA_HOME="$JAVA_HOME"
+          export ANDROID_ACCEPT_SDK_LICENSE=1
+
+          yes | buildozer -v android debug
+
+      # رفع ملف APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Telegram-Proxy-Manager-APK
           path: buildsrc/Telegram_Proxy_Manager_Android_V2/bin/*.apk
           if-no-files-found: error
+          retention-days: 14
