@@ -1,0 +1,41 @@
+
+name: Build Telegram Proxy APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip build-essential libffi-dev libssl-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install buildozer cython==0.29.36
+
+      - name: Build APK
+        run: |
+          mkdir -p buildsrc
+          unzip -q Telegram_Proxy_Manager_Android_V2_APK_Build.zip -d buildsrc
+          cd buildsrc/Telegram_Proxy_Manager_Android_V2
+          buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Telegram-Proxy-Manager-APK
+          path: buildsrc/Telegram_Proxy_Manager_Android_V2/bin/*.apk
+          if-no-files-found: error
